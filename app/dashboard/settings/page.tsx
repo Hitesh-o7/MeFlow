@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -35,11 +35,7 @@ export default function SettingsPage() {
     resolver: zodResolver(settingsSchema),
   });
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -49,8 +45,8 @@ export default function SettingsPage() {
       return;
     }
 
-    const { data } = await supabase
-      .from('profiles')
+    const { data } = await (supabase
+      .from('profiles') as any)
       .select('username, avatar_url')
       .eq('id', user.id)
       .single();
@@ -61,7 +57,11 @@ export default function SettingsPage() {
       setValue('username', data.username || '');
     }
     setLoading(false);
-  };
+  }, [router, setValue, supabase]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   const onSubmit = async (data: SettingsForm) => {
     setSaving(true);
@@ -72,8 +72,8 @@ export default function SettingsPage() {
 
     if (!user) return;
 
-    const { error } = await supabase
-      .from('profiles')
+    const { error } = await (supabase
+      .from('profiles') as any)
       .update({ username: data.username })
       .eq('id', user.id);
 
@@ -94,8 +94,8 @@ export default function SettingsPage() {
 
     if (!user) return;
 
-    const { error } = await supabase
-      .from('profiles')
+    const { error } = await (supabase
+      .from('profiles') as any)
       .update({ avatar_url: url })
       .eq('id', user.id);
 

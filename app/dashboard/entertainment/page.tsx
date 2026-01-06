@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Plus, Trash2, Gamepad2, Film, Tv } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -66,30 +66,30 @@ export default function EntertainmentPage() {
 
   const watchedType = watch('type');
 
-  useEffect(() => {
-    loadEntertainment();
-  }, []);
-
-  useEffect(() => {
-    setValue('status', 'backlog');
-  }, [watchedType, setValue]);
-
-  const loadEntertainment = async () => {
+  const loadEntertainment = useCallback(async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) return;
 
-    const { data } = await supabase
-      .from('entertainment')
+    const { data } = await (supabase
+      .from('entertainment') as any)
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     setEntertainment(data || []);
     setLoading(false);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    loadEntertainment();
+  }, [loadEntertainment]);
+
+  useEffect(() => {
+    setValue('status', 'backlog');
+  }, [watchedType, setValue]);
 
   const onSubmit = async (data: EntertainmentForm) => {
     const {
@@ -98,12 +98,14 @@ export default function EntertainmentPage() {
 
     if (!user) return;
 
-    const { error } = await supabase.from('entertainment').insert({
+    const insertData: Database['public']['Tables']['entertainment']['Insert'] = {
       user_id: user.id,
       title: data.title,
       type: data.type,
       status: data.status,
-    });
+    };
+
+    const { error } = await (supabase.from('entertainment') as any).insert(insertData);
 
     if (!error) {
       reset();
@@ -115,15 +117,15 @@ export default function EntertainmentPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this item?')) return;
 
-    const { error } = await supabase.from('entertainment').delete().eq('id', id);
+    const { error } = await (supabase.from('entertainment') as any).delete().eq('id', id);
     if (!error) {
       loadEntertainment();
     }
   };
 
   const handleStatusChange = async (item: Entertainment, newStatus: Entertainment['status']) => {
-    const { error } = await supabase
-      .from('entertainment')
+    const { error } = await (supabase
+      .from('entertainment') as any)
       .update({ status: newStatus })
       .eq('id', item.id);
 

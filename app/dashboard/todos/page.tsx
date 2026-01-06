@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Plus, Trash2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -33,26 +33,26 @@ export default function TodosPage() {
     resolver: zodResolver(todoSchema),
   });
 
-  useEffect(() => {
-    loadTodos();
-  }, []);
-
-  const loadTodos = async () => {
+  const loadTodos = useCallback(async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) return;
 
-    const { data } = await supabase
-      .from('todos')
+    const { data } = await (supabase
+      .from('todos') as any)
       .select('*')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false});
 
     setTodos(data || []);
     setLoading(false);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    loadTodos();
+  }, [loadTodos]);
 
   const onSubmit = async (data: TodoForm) => {
     const {
@@ -61,7 +61,7 @@ export default function TodosPage() {
 
     if (!user) return;
 
-    const { error } = await supabase.from('todos').insert({
+    const { error } = await (supabase.from('todos') as any).insert({
       user_id: user.id,
       title: data.title,
       description: data.description || null,
@@ -77,8 +77,8 @@ export default function TodosPage() {
   };
 
   const handleToggle = async (todo: Todo) => {
-    const { error } = await supabase
-      .from('todos')
+    const { error } = await (supabase
+      .from('todos') as any)
       .update({ completed: !todo.completed })
       .eq('id', todo.id);
 
@@ -90,7 +90,7 @@ export default function TodosPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this todo?')) return;
 
-    const { error } = await supabase.from('todos').delete().eq('id', id);
+    const { error } = await (supabase.from('todos') as any).delete().eq('id', id);
     if (!error) {
       loadTodos();
     }

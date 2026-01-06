@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Plus, Edit, Trash2, Filter } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -42,19 +42,15 @@ export default function ExpensesPage() {
     },
   });
 
-  useEffect(() => {
-    loadExpenses();
-  }, [selectedCategory]);
-
-  const loadExpenses = async () => {
+  const loadExpenses = useCallback(async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) return;
 
-    let query = supabase
-      .from('expenses')
+    let query = (supabase
+      .from('expenses') as any)
       .select('*')
       .eq('user_id', user.id)
       .order('date', { ascending: false });
@@ -66,7 +62,11 @@ export default function ExpensesPage() {
     const { data } = await query;
     setExpenses(data || []);
     setLoading(false);
-  };
+  }, [selectedCategory, supabase]);
+
+  useEffect(() => {
+    loadExpenses();
+  }, [loadExpenses]);
 
   const onSubmit = async (data: ExpenseForm) => {
     const {
@@ -76,8 +76,8 @@ export default function ExpensesPage() {
     if (!user) return;
 
     if (editingId) {
-      const { error } = await supabase
-        .from('expenses')
+      const { error } = await (supabase
+        .from('expenses') as any)
         .update({
           amount: data.amount,
           description: data.description,
@@ -93,7 +93,7 @@ export default function ExpensesPage() {
         loadExpenses();
       }
     } else {
-      const { error } = await supabase.from('expenses').insert({
+      const { error } = await (supabase.from('expenses') as any).insert({
         user_id: user.id,
         amount: data.amount,
         description: data.description,
@@ -121,7 +121,7 @@ export default function ExpensesPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this expense?')) return;
 
-    const { error } = await supabase.from('expenses').delete().eq('id', id);
+    const { error } = await (supabase.from('expenses') as any).delete().eq('id', id);
     if (!error) {
       loadExpenses();
     }

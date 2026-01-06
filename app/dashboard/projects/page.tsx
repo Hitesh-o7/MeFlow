@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Plus, Trash2, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -43,26 +43,26 @@ export default function ProjectsPage() {
     },
   });
 
-  useEffect(() => {
-    loadProjects();
-  }, []);
-
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) return;
 
-    const { data } = await supabase
-      .from('projects')
+    const { data } = await (supabase
+      .from('projects') as any)
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     setProjects(data || []);
     setLoading(false);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
 
   const onSubmit = async (data: ProjectForm) => {
     const {
@@ -71,7 +71,7 @@ export default function ProjectsPage() {
 
     if (!user) return;
 
-    const { error } = await supabase.from('projects').insert({
+    const { error } = await (supabase.from('projects') as any).insert({
       user_id: user.id,
       title: data.title,
       description: data.description || null,
@@ -86,8 +86,8 @@ export default function ProjectsPage() {
   };
 
   const handleStatusChange = async (project: Project, newStatus: 'idea' | 'in_progress' | 'done') => {
-    const { error } = await supabase
-      .from('projects')
+    const { error } = await (supabase
+      .from('projects') as any)
       .update({ status: newStatus })
       .eq('id', project.id);
 
@@ -99,7 +99,7 @@ export default function ProjectsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this project?')) return;
 
-    const { error } = await supabase.from('projects').delete().eq('id', id);
+    const { error } = await (supabase.from('projects') as any).delete().eq('id', id);
     if (!error) {
       loadProjects();
     }

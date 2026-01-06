@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { DollarSign, CheckSquare, Gamepad2, Film, TrendingUp, Calendar, Tv, User } from 'lucide-react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -29,11 +29,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -41,8 +37,8 @@ export default function DashboardPage() {
     if (!user) return;
 
     // Get user profile
-    const { data: profileData } = await supabase
-      .from('profiles')
+    const { data: profileData } = await (supabase
+      .from('profiles') as any)
       .select('*')
       .eq('id', user.id)
       .single();
@@ -54,16 +50,16 @@ export default function DashboardPage() {
     const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     // Get expenses for this month
-    const { data: expensesData } = await supabase
-      .from('expenses')
+    const { data: expensesData } = await (supabase
+      .from('expenses') as any)
       .select('*')
       .eq('user_id', user.id)
       .gte('date', startOfMonth.toISOString().split('T')[0])
       .order('date', { ascending: true });
 
     // Get pending todos
-    const { data: todosData } = await supabase
-      .from('todos')
+    const { data: todosData } = await (supabase
+      .from('todos') as any)
       .select('*')
       .eq('user_id', user.id)
       .eq('completed', false)
@@ -71,8 +67,8 @@ export default function DashboardPage() {
       .limit(5);
 
     // Get current games/entertainment
-    const { data: gamesData } = await supabase
-      .from('entertainment')
+    const { data: gamesData } = await (supabase
+      .from('entertainment') as any)
       .select('*')
       .eq('user_id', user.id)
       .in('status', ['playing', 'watching'])
@@ -82,7 +78,11 @@ export default function DashboardPage() {
     setTodos(todosData || []);
     setGames(gamesData || []);
     setLoading(false);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   if (loading) {
     return <div className="text-center py-12">Loading...</div>;
@@ -314,7 +314,7 @@ export default function DashboardPage() {
           <div className="space-y-3">
             {todos.length === 0 ? (
               <p className="text-center text-gray-500 dark:text-gray-400 py-8 text-sm">
-                No pending tasks. You're all caught up! 🎉
+                No pending tasks. You&apos;re all caught up! 🎉
               </p>
             ) : (
               todos.map((todo) => (
