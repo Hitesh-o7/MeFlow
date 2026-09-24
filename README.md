@@ -106,4 +106,4 @@ bun run lint
 
 ## License
 
-MIT
+MIT — see [LICENSE](./LICENSE).
