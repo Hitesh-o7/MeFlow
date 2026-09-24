@@ -34,7 +34,7 @@ bun install
 ```
 
 2. **Set up environment variables:**
-Create a `.env.local` file:
+Copy `.env.example` to `.env.local` (`cp .env.example .env.local`) and fill in your values:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
